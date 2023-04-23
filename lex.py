@@ -26,7 +26,7 @@ states = (
 
 # tag name
 def t_ANY_TAG(t):
-    r'[a-zA-Z][a-zA-Z0-9]*'
+    r'[a-zA-Z0-9]+(?![a-zA-Z0-9,])'
     return t
 
 
@@ -58,17 +58,17 @@ def t_TAGINTERPOLATION_END(t):
         t.lexer.stack.pop()
         if not '[' in t.lexer.stack:
             t.lexer.begin('INITIAL')
+        else: 
+            t.type = 'TAGINTERPOLATION_TEXT'
     else:
         print('Nenhuma tag aberta.')
     return t
 
-def t_taginterpolation_TAGINTERPOLATION_TEXT(t):
-    r'[\|\s]\s*(?:(?!\#\{)(?!\#\[)[^\n\]])*'
-    return t
 
 def t_taginterpolation_TAGINTERPOLATION_TEXT_OPEN(t):
     r'\s*\[\s?'
     t.lexer.stack.append('[') 
+    t.type = "TAGINTERPOLATION_TEXT"
     return t
 
 # interpolation = #{interpolation}
@@ -116,6 +116,10 @@ def t_ANY_ASSIGN(t):
     r'\=\s*[a-zA-Z0-9-_]+'
     return t
 
+def t_taginterpolation_TAGINTERPOLATION_TEXT(t):
+    r'[^\[\n\]](?:(?!\#\{)(?!\#\[)[^\[\n\]])*'
+    return t
+
 def t_eof(t):
     # Add your logic for handling the end of file here
     # For example, add DEDENT tokens to the end of the token stream
@@ -149,11 +153,23 @@ lexer.token_stream = []
 
 data = """html
     head
-        title= page_title
-        p Welcome
+        title= pageTitle
+        meta(name='description', content='Example Pug code with 5 levels of hierarchy')
+        // This is a comment inside the head tag
     body
-        h1 Title
-        p Welcome
+        h1#main-heading.main-title Welcome to #[strong my [a,b,c] website {inter} ]
+        p #[q(lang="en") This] is some text on the page list [1,2,3] dict {a,b,c}.
+        //- This is an unbuffered comment
+        p More text on the page.
+        ul
+            li item: #{item}
+            // This is a comment inside the for loop
+            //- This is an unbuffered comment inside the ul tag
+            li
+                a(href='#') Click here for more information
+            li
+                a(href='/about') About Us
+                //- This is an unbuffered comment inside a li tag !
 """
 
 lexer.input(data)

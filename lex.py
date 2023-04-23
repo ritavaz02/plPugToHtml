@@ -1,4 +1,5 @@
 import ply.lex as lex
+from ply.lex import LexToken
 
 # List of token names.
 tokens = (
@@ -12,7 +13,7 @@ tokens = (
     'COMMENT',
     'INTERPOLATION',
     'UNBUFFCOMMENT',
-    'ASSIGN',
+    'ASSIGN','EOF',
     'TAGINTERPOLATION_START',
     'TAGINTERPOLATION_END',
     'TAGINTERPOLATION_TEXT',
@@ -41,6 +42,7 @@ def t_INDENT_DEDENT(t):
         t.lexer.indent_level = t.lexer.indent_level - 1
     else:
         return
+    t.lexer.token_stream.append(t)
     return t
 
 # interpolation = #[tag interpolation]
@@ -73,6 +75,10 @@ def t_taginterpolation_TAGINTERPOLATION_TEXT_OPEN(t):
 def t_ANY_INTERPOLATION(t):
     r'\#\{[a-zA-Z0-9-_]+\}'
     return t
+
+def t_ANY_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
 # Regular expression rules for simple tokens
 def t_TEXT(t):
@@ -110,11 +116,22 @@ def t_ANY_ASSIGN(t):
     r'\=\s*[a-zA-Z0-9-_]+'
     return t
 
-def t_ANY_newline(t):
-    r'\n+'
-    t.lexer.lineno += len(t.value)
+def t_eof(t):
+    # Add your logic for handling the end of file here
+    # For example, add DEDENT tokens to the end of the token stream
+    while t.lexer.indent_level > 0:
+        tok = lex.LexToken()
+        tok.type = 'DEDENT'
+        tok.value = None
+        tok.lineno = t.lineno
+        tok.lexpos = t.lexpos
+        t.lexer.token_stream.append(tok)
+        t.lexer.indent_level -= 1
 
-
+    # Return the next token from the token stream, or None if the stream is empty
+    return t.lexer.token_stream.pop(0) if t.lexer.token_stream else None
+    
+               
 # A string containing ignored characters (spaces and tabs)
 t_ignore  = ''
 
@@ -123,47 +140,87 @@ def t_ANY_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
+
 # Build the lexer
 lexer = lex.lex()
 lexer.stack = list()
 lexer.indent_level = 0
-lexer.token_list = []
+lexer.token_stream = []
 
-data = '''
-html
+data = """html
     head
-        title= pageTitle
-        meta(name='description', content='Example Pug code with 5 levels of hierarchy')
-        // This is a comment inside the head tag
+        title= page_title
+        p Welcome
     body
-        h1#main-heading.main-title Welcome to #[strong my website {inter}]
-        p #[q(lang="en") This] is some text on the page list [1,2,3] dict {a,b,c}.
-        //- This is an unbuffered comment
-        p More text on the page.
-        ul
-            li item: #{item}
-            // This is a comment inside the for loop
-            //- This is an unbuffered comment inside the ul tag
-            li
-                a(href='#') Click here for more information
-            li
-                a(href='/about') About Us
-                //- This is an unbuffered comment inside a li tag ! '''
+        h1 Title
+        p Welcome
+"""
 
-
-# Give the lexer some input
 lexer.input(data)
+
 
 for tok in lexer:
     print(tok)
 
-# while t.lexer.indent_level > 0:
-# At the end of input, add DEDENT tokens to match the remaining indent levels
-while lexer.indent_level > 0:
-    dedent_tok = lex.LexToken()
-    dedent_tok.type = 'DEDENT'
-    lexer.token_list.append(dedent_tok)
-    lexer.indent_level -= 1
 
-for d in lexer.token_list:
-    print(d.type)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # for tok in lexer:
+# #     print(tok)
+
+# tokens = []
+# for tok in lexer:
+#     tokens.append(tok)
+
+# # Manually inject a token at the end of the token stream
+# while lexer.indent_level > 0:
+#     prev_token = tokens[-1]
+#     num_newlines = prev_token.value.count('\n')
+#     injected_token = lex.LexToken()
+#     injected_token.type = 'DEDENT'
+#     injected_token.value = '\n    '
+#     injected_token.lineno = prev_token.lineno + num_newlines
+#     injected_token.lexpos = len(tokens)
+#     tokens.append(injected_token)
+#     lexer.indent_level -= 1
+
+# lexer.token = lambda: None
+
+# # Iterate over the tokens again, including the manually injected token
+# for token in tokens:
+#     print(token)
+
+
+# # Get all the tokens
+# tokens = []
+# for tok in lexer:
+#     tokens.append(tok)
+
+# # Manually inject a token at the end of the token stream
+# while lexer.indent_level > 0:
+#     prev_token = tokens[-1]
+#     injected_token = lex.LexToken()
+#     injected_token.type = 'DEDENT'
+#     injected_token.value = '\n' + '    ' * lexer.indent_level
+#     injected_token.lineno = prev_token.lineno + 1
+#     injected_token.lexpos = len(tokens)
+#     tokens.append(injected_token)
+#     lexer.indent_level -= 1
+
+# # Iterate over the sorted tokens
+# for token in tokens:
+#     print(token)

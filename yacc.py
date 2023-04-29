@@ -1,232 +1,180 @@
 import ply.yacc as yacc
 
 from lex import tokens
-"""
-
-TOP DOWN PARSING
-
-document ::= element_list
-
-element_list ::= element_list_tail element
-
-element_list_tail ::= empty
-                      | element_list_tail element_indent
-
-element_indent ::= element INDENT element_list_tail DEDENT
-
-element ::= TAG attributes block
-           | TEXT
-           | COMMENT
-           | UNBUFFCOMMENT
-           | INTERPOLATION
-           | TAGINTERPOLATION_START tag_interpolation TAGINTERPOLATION_END
-
-block ::= INDENT element_list DEDENT
-         | element
-
-tag_interpolation ::= TAGINTERPOLATION_TEXT
-                     | TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END
-
-attributes ::= attribute attributes
-               | attribute
-
-attribute ::= ID
-             | CLASS
-             | ATTR
-             | ASSIGN
-
-
-"""
 
 """
 BOTTOM UP PARSING
+z ::= linelist '$'
 
-z ::= element_list '$'
+lineList ::= lineList line 
+          | line
+          
+line ::= TAG
+        | INDENT lineList DEDENT
+        | TAG block
+        | TAG attributes
+        | TAG attributes block
+        | attributes block
 
-element_list ::= element_list element_indent
-               | element
+attributes ::= attributes attribute
+             | attribute
 
-element_indent ::= element INDENT element_list DEDENT
-
-element ::= TAG attributes block
-           | TAG attributes
-           | TAG block
-           | TAG
-           | TEXT
-           | COMMENT
-           | UNBUFFCOMMENT
-           | INTERPOLATION
-           | TAGINTERPOLATION_START tag_interpolation TAGINTERPOLATION_END
-block ::= INDENT element_list DEDENT
-         | element
-tag_interpolation ::= TAGINTERPOLATION_TEXT
-                     | TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END
-attributes ::= attribute attributes
-               | attribute
 attribute ::= ID
              | CLASS
              | ATTR
              | ASSIGN
-          
+
+block ::= TEXT
+        | COMMENT
+        | UNBUFFCOMMENT
+        | INTERPOLATION
+        | TAGINTERPOLATION_START tag_interpolation TAGINTERPOLATION_END
+        | INDENT lineList DEDENT
+
+tag_interpolation ::= TAGINTERPOLATION_TEXT
+                     | TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END
+
 """
 
 data = """html
     head
-        title= page_title
+        title= Title
         p Welcome
     body
         h1 Title
-        p Welcome
+        p Welcome home
+$
+
 """
+
+# data = """
+# html
+#     head
+#         title= pageTitle
+#         meta(name='description', content='Example Pug code with 5 levels of hierarchy')
+#         // This is a comment inside the head tag
+#     body
+#         h1#main-heading.main-title Welcome to #[strong my website {inter}]
+#         p #[q(lang="en") This] is some text on the page list [1,2,3] dict {a,b,c}.
+#         //- This is an unbuffered comment
+#         p More text on the page.
+#         ul
+#             li item: #{item}
+#             // This is a comment inside the for loop
+#             //- This is an unbuffered comment inside the ul tag
+#             li
+#                 a(href='#') Click here for more information
+#             li
+#                 a(href='/about') About Us
+#                 //- This is an unbuffered comment inside a li tag !
+# $
+
+# """
 
 
 tag_stack = []
 
-def p_element_list(p):
-  '''element_list : element_list element_indent'''
-  p[1].append(p[2])
-  p[0] = p[1]
-  print("p_element_list: ", p[0])
-               
-def p_element_list_single(p):
-  '''element_list : element'''
-  p[0] = [p[1]]
-  print("p_element_single: ", p[0])
+def p_linelist(p):
+    '''linelist : linelist line'''
+    p[1].append(p[2])
+    p[0] = p[1]
+    print("p_linelist: ", p[0])
 
-def p_element_indent(p):
-  '''element_indent : element INDENT element_list DEDENT'''
-  if isinstance(p[3], list):
+def p_linelist_line(p):
+    '''linelist : line'''
+    p[0] = [p[1]]
+    print("p_linelist_line: ", p[0])
+
+
+# def p_linelist_indent(p):
+#     '''content : linelist'''
+#     p[0] = p[1]
+#     print("p_linelist_indent: ", p[0])
+
+# def p_linelist_indent(p):
+#     '''linelist : INDENT line'''
+#     p[0] = [p[2]]
+#     print("p_linelist_indent: ", p[0])
+
+# def p_linelist_dedent(p):
+#     '''linelist : DEDENT line'''
+#     p[0] = [p[2]]
+#     print("p_linelist_dedent: ", p[0])
+
+
+
+def p_line_tag(p):
+    '''line : TAG'''
     p[0] = {
-      "parent": p[1],
-      "children": p[3]
+        "tag": p[1]
     }
-  else:
+    tag_stack.append(p[1])
+    print("p_element_tag: ", p[0])
+
+
+def p_line_indent(p):
+    '''line : INDENT linelist DEDENT'''
     p[0] = {
-      "parent": p[1],
-      "children": [p[3]]
+        "tag": tag_stack.pop(),
+        "block": p[2]
     }
-  print("p_element_indent: ", p[0])
+    print("p_element_indent: ", p[0])
 
-def p_element_tag(p):
-  '''element : TAG'''
-  p[0] = {
-    "tag": p[1],
-  }
-  tag_stack.append(p[1])
-  print("p_element_tag: ", p[0])
+def p_line_tag_block(p):
+    '''line : TAG block'''
+    p[0] = {
+        "tag": p[1],
+        "block": p[2]
+    }
+    tag_stack.append(p[1])
+    print("p_element_tag_block: ", p[0])
 
-def p_element_tag_att_block(p):
-  '''element : TAG attributes block'''
-  p[0] = {
-    "tag": p[1],
-    "attributes": p[2],
-    "block": p[3]
-  }
-  tag_stack.append(p[1])
-  print("p_element_tag_att_block: ", p[0])
+def p_line_tag_attributes(p):
+    '''line : TAG attributes'''
+    p[0] = {
+        "tag": p[1],
+        "attributes": p[2]
+    }
+    tag_stack.append(p[1])
+    print("p_element_tag_attributes: ", p[0])
 
-def p_element_tag_att(p):
-  '''element : TAG attributes'''
-  p[0] = {
-    "tag": p[1],
-    "attributes": p[2]
-  }
-  tag_stack.append(p[1])
-  print("p_element_tag_att: ", p[0])
+def p_line_tag_attributes_block(p):
+    '''line : TAG attributes block'''
+    p[0] = {
+        "tag": p[1],
+        "attributes": p[2],
+        "block": p[3]
+    }
+    tag_stack.append(p[1])
+    print("p_element_tag_attributes_block: ", p[0])
 
-def p_element_tag_block(p):
-  '''element : TAG block'''
-  p[0] = {
-    "tag": p[1],
-    "block": p[2]
-  }
-  tag_stack.append(p[1])
-  print("p_element_tag_block: ", p[0])
+def p_line_attributes_block(p):
+    '''line : attributes block'''
+    p[0] = {
+        "tag": tag_stack.pop(),
+        "attributes": p[1],
+        "block": p[2]
+    }
+    print("p_element_attributes_block: ", p[0])
 
-def p_element_text(p):
-  '''element : TEXT'''
-  p[0] = {
-    "type": "text",
-    "content": p[1]
-  }
-  print("p_element_text: ", p[0])
+def p_attributes_attribute(p):
+    '''attributes : attributes attribute'''
+    p[1].append(p[2])
+    p[0] = p[1]
+    print("p_attributes_attribute: ", p[0])
 
-def p_element_comment(p):
-  '''element : COMMENT'''
-  p[0] = {
-    "type": "comment",
-    "content": p[1]
-  }
-  print("p_element_comment: ", p[0])
-
-def p_element_unbuffcomment(p):
-  '''element : UNBUFFCOMMENT'''
-  p[0] = {
-    "type": "unbuffcomment",
-    "content": p[1]
-  }
-  print("p_element_unbuffcomment: ", p[0])
-
-def p_element_interpolation(p):
-  '''element : INTERPOLATION'''
-  p[0] = {
-    "type": "interpolation",
-    "content": p[1][2:-1] #texto dentro de #{}
-  }
-  print("p_element_interpolation: ", p[0])
-
-def p_element_taginterpolation(p):
-  '''element : TAGINTERPOLATION_START tag_interpolation TAGINTERPOLATION_END'''
-  p[0] = {
-    "type": "tag_interpolation",
-    "content": p[2]
-  }
-  print("p_element_taginterpolation: ", p[0])
-
-
-def p_block(p):
-  '''block : INDENT element_list DEDENT'''
-  p[0] =  p[2]
-  print("p_block: ", p[0])
-
-def p_block_single(p):
-  '''block : element'''
-  p[0] = [p[1]]
-  print("p_block_single: ", p[0])
-
-def p_tag_interpolation_text(p):
-  '''tag_interpolation : TAGINTERPOLATION_TEXT'''
-  p[0] = p[1]
-  print("p_tag_interpolation_text: ", p[0])
-
-def p_tag_interpolation(p):
-  '''tag_interpolation : TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END'''
-  p[0] =  p[2]
-  print("p_tag_interpolation: ", p[0])
-
-def p_atributes(p):
-  '''attributes : attribute attributes'''
-  p[2].append(p[1])
-  p[0] = p[2]
-  print("p_atributes: ", p[0])
-
-def p_atributes_single(p):
-  '''attributes : attribute'''
-  p[0] = [p[1]]
-  print("p_atributes_single: ", p[0])
-
-def p_attributes(p):
-  '''attributes : epsilon'''
-  p[0] = []
-  print("p_atributes: ", p[0])
+def p_attributes_attribute_single(p):
+    '''attributes : attribute'''
+    p[0] = [p[1]]
+    print("p_attributes_attribute_single: ", p[0])
 
 def p_attribute_id(p):
-  '''attribute : ID'''
-  p[0] = {
-    "name": "id",
-    "value": p[1][1:] #remove #
-  }
-  print("p_atribute_id: ", p[0])
+    '''attribute : ID'''
+    p[0] = {
+      "name": "id",
+      "value": p[1][1:] #remove #
+    }
+    print("p_atribute_id: ", p[0])
 
 def p_attribute_class(p):
   '''attribute : CLASS'''
@@ -252,6 +200,67 @@ def p_attribute_assign(p):
   }
   print("p_attribute_assign: ", p[0])
   
+def p_block_text(p):
+    '''block : TEXT'''
+    p[0] = {
+        "type": "text",
+        "value": p[1]
+    }
+    print("p_block_text: ", p[0])
+
+def p_block_comment(p):
+    '''block : COMMENT'''
+    p[0] = {
+        "type": "comment",
+        "value": p[1]
+    }
+    print("p_block_comment: ", p[0])
+
+def p_block_unbuffcomment(p):
+    '''block : UNBUFFCOMMENT'''
+    p[0] = {
+        "type": "unbuffcomment",
+        "value": p[1]
+    }
+    print("p_block_unbuffcomment: ", p[0])
+
+def p_block_interpolation(p):
+    '''block : INTERPOLATION'''
+    p[0] = {
+        "type": "interpolation",
+        "value": p[1][2:-1] #texto dentro de #{}
+    }
+    print("p_block_interpolation: ", p[0])
+
+def p_block_taginterpolation(p):
+    '''block : TAGINTERPOLATION_START tag_interpolation TAGINTERPOLATION_END'''
+    p[0] = {
+        "type": "taginterpolation",
+        "value": p[2],
+    }
+    print("p_block_taginterpolation: ", p[0])
+
+def p_block_indent(p):
+    '''block : INDENT linelist DEDENT'''
+    p[0] = p[2]
+    print("p_block_indent: ", p[0])
+
+def p_taginterpolation_text(p):
+    '''tag_interpolation : TAGINTERPOLATION_TEXT'''
+    p[0] = {
+        "type": "text",
+        "value": p[1]
+    }
+    print("p_taginterpolation_text: ", p[0])
+
+def p_taginterpolation_text_open(p):
+    '''tag_interpolation : TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END'''
+    # p[0] = {
+    #     "type": "text",
+    #     "value": p[1] + p[2]["value"]
+    # }
+    p[0] = p[2]
+    print("p_taginterpolation_text_open: ", p[0])
 
 
 def p_error(p):
@@ -262,4 +271,6 @@ def p_error(p):
 
 parser = yacc.yacc()
 output = parser.parse(data)
+
+print("\noutput: ")
 print(output)

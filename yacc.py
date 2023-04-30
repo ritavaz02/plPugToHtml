@@ -10,7 +10,6 @@ lineList ::= lineList line
           | line
           
 line ::= TAG
-        | INDENT lineList DEDENT
         | TAG block
         | TAG attributes
         | TAG attributes block
@@ -68,7 +67,6 @@ $
 #                 a(href='/about') About Us
 #                 //- This is an unbuffered comment inside a li tag !
 # $
-
 # """
 
 
@@ -76,32 +74,28 @@ tag_stack = []
 
 def p_linelist(p):
     '''linelist : linelist line'''
-    p[1].append(p[2])
+    tag = p[2]["tag"]
+    if tag_stack and tag_stack[-1] == tag:
+        p[1][-1]["body"].append(p[2])
+    else:
+        p[1].append({
+            "tag": tag,
+            "body": [p[2]]
+        })
+    tag_stack.append(tag)
     p[0] = p[1]
     print("p_linelist: ", p[0])
+    # print(p.parser.symstack)
 
 def p_linelist_line(p):
     '''linelist : line'''
-    p[0] = [p[1]]
+    # p[0] = [p[1]]
+    p[0] = [{        "tag": p[1]["tag"],
+        "body": []
+    }]
+    if "attributes" in p[1]:
+        p[0][0]["attributes"] = p[1]["attributes"]
     print("p_linelist_line: ", p[0])
-
-
-# def p_linelist_indent(p):
-#     '''content : linelist'''
-#     p[0] = p[1]
-#     print("p_linelist_indent: ", p[0])
-
-# def p_linelist_indent(p):
-#     '''linelist : INDENT line'''
-#     p[0] = [p[2]]
-#     print("p_linelist_indent: ", p[0])
-
-# def p_linelist_dedent(p):
-#     '''linelist : DEDENT line'''
-#     p[0] = [p[2]]
-#     print("p_linelist_dedent: ", p[0])
-
-
 
 def p_line_tag(p):
     '''line : TAG'''
@@ -111,20 +105,14 @@ def p_line_tag(p):
     tag_stack.append(p[1])
     print("p_element_tag: ", p[0])
 
-
-def p_line_indent(p):
-    '''line : INDENT linelist DEDENT'''
-    p[0] = {
-        "tag": tag_stack.pop(),
-        "block": p[2]
-    }
-    print("p_element_indent: ", p[0])
-
 def p_line_tag_block(p):
     '''line : TAG block'''
     p[0] = {
         "tag": p[1],
-        "block": p[2]
+        "body": [{
+            "tag": p[1],
+            "block": p[2]
+        }]
     }
     tag_stack.append(p[1])
     print("p_element_tag_block: ", p[0])
@@ -255,10 +243,6 @@ def p_taginterpolation_text(p):
 
 def p_taginterpolation_text_open(p):
     '''tag_interpolation : TAGINTERPOLATION_TEXT_OPEN tag_interpolation TAGINTERPOLATION_END'''
-    # p[0] = {
-    #     "type": "text",
-    #     "value": p[1] + p[2]["value"]
-    # }
     p[0] = p[2]
     print("p_taginterpolation_text_open: ", p[0])
 
@@ -269,8 +253,10 @@ def p_error(p):
   else:
     print("Syntax error at EOF")
 
-parser = yacc.yacc()
+# parser = yacc.yacc()
+parser = yacc.yacc(debug=True)
 output = parser.parse(data)
 
 print("\noutput: ")
 print(output)
+

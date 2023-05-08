@@ -103,31 +103,6 @@ def p_elemList_elem(p):
 #     print("p_elemList_epsilon", p[0])
 #     p[0] = ''
 
-# def p_elem_div(p):
-#     """elem : attributes insides"""
-#     atts = ''
-#     mydict = dict(p[1])
-#     if p[1]:
-#         for key, value in mydict.items():
-#             if key != 'attr':
-#                 atts += f'{key}="{value}" '
-#             else:
-#                 atts += f'{value}'
-#         p[0] = f'<div {atts}> {p[2]} </div>'
-#     #print("p_elem_div", p[0])
-#
-# def p_elem_div_block(p):
-#     """elem : attributes insides INDENT elemList DEDENT"""
-#     atts = ''
-#     mydict = dict(p[1])
-#     if p[1]:
-#         for key, value in mydict.items():
-#             if key != 'attr':
-#                 atts += f'{key}="{value}" '
-#             else:
-#                 atts += f'{value}'
-#     p[0] = f'<div {atts}>{p[2]} {p[4]}</div>'
-#     #print("p_elem_div_block", p[0])
 
 def p_init_tag(p):
     """init : TAG"""

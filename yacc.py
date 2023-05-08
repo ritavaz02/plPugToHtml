@@ -12,8 +12,6 @@ elemList ::= elemList elem
 
 elem ::= TAG attributes insides INDENT elemList DEDENT
        | TAG attributes insides
-       | attributes insides INDENT elemList DEDENT
-       | attributes insides
        | comment
        | unbuffcomment
        | DOCTYPE

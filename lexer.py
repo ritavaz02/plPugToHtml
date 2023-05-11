@@ -19,16 +19,18 @@ tokens = (
     'TAGINTERPOLATION_END',
     'TAGINTERPOLATION_TEXT',
     'TAGINTERPOLATION_TEXT_OPEN',
-    'CONTENT'
+    'CONTENT',
+    'ATTRIBUTE',
+    'IGNORE'
 )
 
 states = (
     ('taginterpolation', 'inclusive'),
-    ('commentblock', 'exclusive')
+    ('commentblock', 'exclusive'),
+    ('attributes', 'exclusive')
 )
 
-previous_indents = 0
-indent_stack = [0]
+previous_state = None
 
 def t_DOCTYPE(t):
     r'doctype\s+html'
@@ -38,6 +40,13 @@ def t_commentblock_CONTENT(t):
     r'[^\s].+'
     return t
 
+def t_attributes_ATTRIBUTE(t):
+    r'[a-z]+(={[^{}]+}|[^\),\s]+)?'
+    return t
+
+def t_attributes_IGNORE(t):
+    r',\s'
+    pass
 
 # tag name
 def t_ANY_TAG(t):
@@ -52,6 +61,8 @@ def t_ANY_INDENT_DEDENT(t):
     r'(?<=\n)\s+'
     indent = len(t.value.strip('\n')) // 4
     global dedent_tokens
+    if t.lexer.current_state() == 'attributes':
+        print("WHYYY")
     if indent > t.lexer.indent_level:
         if t.lexer.current_state() == 'INITIAL':
             t.type = 'INDENT'
@@ -135,8 +146,14 @@ def t_ANY_CLASS(t):
 
 # attribute = (attr) - '(' then catch all untill ')' then ')'
 def t_ANY_ATTR(t):
-    r'\([^\)]+\)'
-    return t
+    r'\(|\)'
+    global previous_state
+    if t.value == '(':
+        previous_state= t.lexer.current_state()
+        t.lexer.begin('attributes')
+    else:
+        t.lexer.begin(previous_state)
+    pass
 
 
 # unbuffered comment = //-comment
@@ -202,37 +219,47 @@ def custom_token():
 lexer.token = custom_token
 lexer.stack = list()
 lexer.indent_level = 0
-last_token_pos = lexer.lexpos
-last_lineno = lexer.lineno
-lexer.flag = 0
 
 # a chave é o numero da linha
 # o valor é o nível de indentação
 
 data = """doctype html
 html
-    head
+    head.HEAD
+        // 
+            Comments for your HTML readers.
+            Use as much text as you want.
+            Hello world.
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         link(rel="stylesheet", href="styles.css")
-        title My Pug Example
+        a(style={color: 'red', background: 'green', color: 'white'})
+        input(type='checkbox', checked)
+        title=title
     body
-        //- 
-            cont
-            cont
+        // hey
+            Ana
+            Moreira
+            Vaz
         header#id.classe.classe2
-            h1 Welcome to My Pug Example 
-        main
-            section
+            h1 Welcome to My Pug Example {1,2,3}
+        main.main.outra.aaa
+            section.sec
+                .section
+                    p Div
                 h2 #[b About] me
-                p This is a simple example of a Pug template with nested elements and 4 spaces for indentation.
-            .div.outra
-                .divdentro
+                p This is a simple example of a Pug [1,2,3] template with nested elements and 4 spaces for indentation.
+            .div
+                .divdentro.classedentro
+                    .divdentrooo
             section
                 h2 Contact
                 ul
                     li.classeli Email: example@example.com
                     li Phone: +1 123 456 7890
+                    li #[a(href="") Clique]
+                p
+                    | Texto #[b socorro] #[em=em] aaaa (oi)
         footer
             p Copyright Â© 2023 - All Rights Reserved
 """

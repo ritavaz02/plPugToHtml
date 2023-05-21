@@ -89,12 +89,6 @@ def p_elemList_elem(p):
     # print("p_elemList_elem", p[0])
 
 
-# def p_elemList_epsilon(p):
-#     """elemList : """
-#     print("p_elemList_epsilon", p[0])
-#     p[0] = ''
-
-
 def p_init_tag(p):
     """init : TAG"""
     p[0] = ("tag", p[1])
@@ -109,7 +103,7 @@ def p_elem_tag(p):
     """elem : init components insides assign"""
     atts = ''
     tag = ''
-    print(p[2])
+    # print(p[2])
     mydict = dict(p[2])
     if p[1][0] == "tag":
         tag += p[1][1]
@@ -130,9 +124,9 @@ def p_elem_tag(p):
                 atts += f'{value}'
     if p[4] is not None:
         if atts == '':
-            p[0] = f'<{tag}> {p[4]} <{tag}/>'
+            p[0] = f'<{tag}> {p[4]} </{tag}>'
         else:
-            p[0] = f'<{tag} {atts.rstrip()}> {p[4]} <{tag}/>'
+            p[0] = f'<{tag} {atts.rstrip()}> {p[4]} </{tag}>'
     elif p[3] == '' and tag != "div":
         if atts == '':
             p[0] = f'<{tag}/>'
@@ -253,7 +247,7 @@ def p_attributes(p):
         p[0] = p[1] + f" {styleFormat(p[2])}"
     else:
         p[0] = p[1] + f" {p[2]}"
-    print("p_attributes", p[0])
+    # print("p_attributes", p[0])
 
 
 def p_attributes_attribute(p):
@@ -262,7 +256,7 @@ def p_attributes_attribute(p):
         p[0] = styleFormat(p[1])
     else:
         p[0] = p[1]
-    print("p_attributes_attribute", p[0])
+    # print("p_attributes_attribute", p[0])
 
 
 def p_styles(p):
@@ -279,7 +273,7 @@ def p_styles(p):
     else:
         dictatts[p[2][0]] = p[2][1]
     p[0] = dictatts
-    print("p_styles", p[0])
+    # print("p_styles", p[0])
 
 
 def p_styles_style(p):
@@ -290,13 +284,13 @@ def p_styles_style(p):
 def p_style_class(p):
     """style : CLASS"""
     p[0] = ("class", p[1][1:])
-    print("p_style_class", p[0])
+    # print("p_style_class", p[0])
 
 
 def p_style_id(p):
     """style : ID"""
     p[0] = ("id", p[1][1:])
-    print("p_style_id", p[0])
+    # print("p_style_id", p[0])
 
 
 def p_components_attributes(p):
@@ -315,12 +309,13 @@ def p_components_styles(p):
     """components : components styles"""
     components = dict(p[1])
     #add conteudo de styles para components
-    for key,value in p[2].items():
-        if key in components:
-            if key != 'id':
-                components[key] = components[key] + f" {value}"
-        else:
-            components[key] = value
+    if p[2]:
+        for key,value in p[2].items():
+            if key in components:
+                if key != 'id':
+                    components[key] = components[key] + f" {value}"
+            else:
+                components[key] = value
     p[0] = components
     # print("p_components_styles", p[0])
 
@@ -347,9 +342,11 @@ def p_insides_epsilon(p):
 
 def p_assign(p):
     """assign : ASSIGN"""
-    p[0] = f'{p[1][1:]}'
-    print(p[0])
-    # remove =
+    var = f'{p[1][1:]}'
+    if var in parser.interpolation:
+        p[0] = parser.interpolation[var]
+    else:
+        print(f"Error: {var} is not defined")
     # print("p_inside_assign", p[0])
 
 
@@ -360,7 +357,11 @@ def p_assign_epsilon(p):
 
 def p_inside_interpolation(p):
     """inside : INTERPOLATION"""
-    p[0] = f'{p[1][2:-1]}'  # remove #{}
+    var = f'{p[1][2:-1]}'  # remove #{}
+    if var in parser.interpolation:
+        p[0] = parser.interpolation[var]
+    else:
+        print(f"Error: {var} is not defined")
     # print("p_inside_interpolation", p[0])
 
 
@@ -420,48 +421,4 @@ def p_error(p):
         print("Syntax error at EOF")
 
 
-data = """doctype html
-html
-    head.HEAD
-        // 
-            Comments for your HTML readers.
-            Use as much text as you want.
-            Hello world.
-        meta(charset="UTF-8")
-        meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        link(rel="stylesheet", href="styles.css")
-        a(style={color: 'red', background: 'green', color: 'white'})
-        input(type='checkbox', checked)
-        title=title
-    body
-        // hey
-            Ana
-            Moreira
-            Vaz
-        header#id.classe.classe2
-            h1 Welcome to My Pug Example {1,2,3}
-        main.main.outra.aaa
-            section.sec
-                .section
-                    p Div
-                h2 #[b About] me
-                p This is a simple example of a Pug [1,2,3] template with nested elements and 4 spaces for indentation.
-            .div
-                .divdentro.classedentro
-                    .divdentrooo
-            section
-                h2 Contact
-                ul
-                    li.classeli Email: example@example.com
-                    li Phone: +1 123 456 7890
-                    li #[a(href="") Clique]
-                p
-                    | Texto #[b socorro] #[em=em] aaaa (oi)
-        footer
-            p Copyright Â© 2023 - All Rights Reserved
-"""
-
 parser = yacc.yacc(debug=True)
-output = parser.parse(data)
-print("\noutput: ")
-print(output)

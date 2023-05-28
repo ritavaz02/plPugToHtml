@@ -356,9 +356,9 @@ def p_assign(p):
         if var in parser.interpolation:
             p[0] = parser.interpolation[var]
         else:
-            print(f"Error: {var} is not defined")
+            print(f'Error: "{var}" is not defined at line {p.lineno(1)} and position at {p.lexpos(1)}')
     else:
-        print(f"Error: interpolation dictionay is not defined")
+        print(f'Error: interpolation dictionary is not defined for variable "{var}" at line {p.lineno(1)} and position at {p.lexpos(1)}')
         p[0] = 'ERROR'
     # print("p_inside_assign", p[0])
 
@@ -375,9 +375,9 @@ def p_inside_interpolation(p):
         if var in parser.interpolation:
             p[0] = parser.interpolation[var]
         else:
-            print(f"Error: {var} is not defined")
+            print(f'Error: "{var}" is not defined at line {p.lineno(1)} and position at {p.lexpos(1)}')
     else:
-        print(f"Error: interpolation dictionay is not defined")
+        print(f'Error: interpolation dictionary is not defined for variable "{var}" at line {p.lineno(1)} and position at {p.lexpos(1)}')
         p[0] = 'ERROR'
     # print("p_inside_interpolation", p[0])
 

@@ -343,10 +343,15 @@ def p_insides_epsilon(p):
 def p_assign(p):
     """assign : ASSIGN"""
     var = f'{p[1][1:]}'
-    if var in parser.interpolation:
-        p[0] = parser.interpolation[var]
+    # verify if dict exists
+    if hasattr(parser, 'interpolation'):
+        if var in parser.interpolation:
+            p[0] = parser.interpolation[var]
+        else:
+            print(f"Error: {var} is not defined")
     else:
-        print(f"Error: {var} is not defined")
+        print(f"Error: interpolation dictionay is not defined")
+        p[0] = 'ERROR'
     # print("p_inside_assign", p[0])
 
 
@@ -358,10 +363,14 @@ def p_assign_epsilon(p):
 def p_inside_interpolation(p):
     """inside : INTERPOLATION"""
     var = f'{p[1][2:-1]}'  # remove #{}
-    if var in parser.interpolation:
-        p[0] = parser.interpolation[var]
+    if hasattr(parser, 'interpolation'):
+        if var in parser.interpolation:
+            p[0] = parser.interpolation[var]
+        else:
+            print(f"Error: {var} is not defined")
     else:
-        print(f"Error: {var} is not defined")
+        print(f"Error: interpolation dictionay is not defined")
+        p[0] = 'ERROR'
     # print("p_inside_interpolation", p[0])
 
 

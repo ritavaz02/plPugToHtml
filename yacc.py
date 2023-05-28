@@ -21,6 +21,7 @@ elem ::= init components insides INDENT elemList DEDENT
 
 init ::= TAG
        | CLASS
+       | ID
 
 comment ::= COMMENT content
 
@@ -95,8 +96,9 @@ def p_init_tag(p):
 
 
 def p_init_div(p):
-    """init : CLASS"""
-    p[0] = ("div", p[1][1:])
+    """init : CLASS
+            | ID"""
+    p[0] = ("div", p[1])
 
 
 def p_elem_tag(p):
@@ -112,11 +114,14 @@ def p_elem_tag(p):
         p[2] = 1
     if p[2]:
         if p[1][0] == "div":
-            if "class" in mydict:
-                classes = mydict["class"]
-                mydict["class"] = p[1][1] + ' ' + classes
-            else:
-                mydict["class"] = p[1][1]
+            if p[1][1].startswith("."):
+                if "class" in mydict:
+                    classes = mydict["class"]
+                    mydict["class"] = p[1][1][1:] + ' ' + classes
+                else:
+                    mydict["class"] = p[1][1][1:]
+            if p[1][1].startswith("#"):
+                mydict["id"] = p[1][1][1:]
         for key, value in mydict.items():
             if key != 'attr':
                 atts += f'{key}="{value}" '
@@ -152,11 +157,14 @@ def p_elem(p):
         p[2] = 1
     if p[2]:
         if p[1][0] == "div":
-            if "class" in mydict:
-                classes = mydict["class"]
-                mydict["class"] = p[1][1] + ' ' + classes
-            else:
-                mydict["class"] = p[1][1]
+            if p[1][1].startswith("."):
+                if "class" in mydict:
+                    classes = mydict["class"]
+                    mydict["class"] = p[1][1][1:] + ' ' + classes
+                else:
+                    mydict["class"] = p[1][1][1:]
+            if p[1][1].startswith("#"):
+                mydict["id"] = p[1][1][1:]
         for key, value in mydict.items():
             if key != 'attr':
                 atts += f'{key}="{value}" '

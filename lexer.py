@@ -61,8 +61,6 @@ def t_ANY_INDENT_DEDENT(t):
     r'(?<=\n)\s+'
     indent = len(t.value.strip('\n')) // 4
     global dedent_tokens
-    if t.lexer.current_state() == 'attributes':
-        print("WHYYY")
     if indent > t.lexer.indent_level:
         if t.lexer.current_state() == 'INITIAL':
             t.type = 'INDENT'

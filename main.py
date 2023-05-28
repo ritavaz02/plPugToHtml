@@ -3,9 +3,9 @@ import sys
 from lexer import lexer
 from yacc import parser
 
-# if command is python3 tokenizer.py --help print help
+# if command is python3 main.py --help print help
 if len(sys.argv) < 2 or (len(sys.argv) == 2 and sys.argv[1] == '--help'):
-    print("Usage: python3 tokenizer.py <file.pug> <interpolation.json>")
+    print("Usage: python3 main.py <file.pug> <interpolation.json>")
     exit(1)
 
 # Read file with pug code if exists

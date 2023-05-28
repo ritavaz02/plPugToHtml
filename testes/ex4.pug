@@ -1,17 +1,17 @@
 doctype html
 html(lang="en")
-  head
-    meta(charset="UTF-8")
-    title My Pug Example
-  body
-    // This is a comment
-    h1#heading.main-title Welcome to Pug!
-    p.subtitle(class="highlight") Pug is a powerful templating engine.
-    p Here's an example of some text.
-    p My name is #{username} .
-    p I am #{age} years old.
-    //-
-        This is an unbuffered comment
-    p This is an assignment:
-    span=assignment
-    p #[hello=hello]
+    head
+        meta(charset="UTF-8")
+        title My Pug Example
+    body
+        // This is a comment
+        h1#heading.main-title Welcome to Pug!
+        p.subtitle(class="highlight") Pug is a powerful templating engine.
+        p Here's an example of some text.
+        p My name is #{username} .
+        p I am #{age} years old.
+        //-
+            This is an unbuffered comment
+        p This is an assignment:
+        span=assignment
+        p #[hello=hello]

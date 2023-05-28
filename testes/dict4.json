@@ -2,5 +2,6 @@
     "username": "John",
     "age": "25",
     "assignment": "Assign correct!",
-    "hello": "Hello, Pug!"
+    "hello": "Hello, Pug!",
+    "me": "<input pipipi/>"
 }

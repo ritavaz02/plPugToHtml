@@ -401,9 +401,9 @@ def p_tag_interpolation(p):
                 atts += f'{value}'
     if p[5] is not None:
         if not atts:
-            p[0] = f'<{p[2]}> {p[5]} <{p[2]}/>'
+            p[0] = f'<{p[2]}> {p[5]} </{p[2]}>'
         else:
-            p[0] = f'<{p[2]} {atts.rstrip()}> {p[5]} <{p[2]}/>'
+            p[0] = f'<{p[2]} {atts.rstrip()}> {p[5]} </{p[2]}>'
     elif p[4] == '':
         if not atts:
             p[0] = f'<{p[2]}/>'
